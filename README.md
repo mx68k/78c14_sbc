@@ -1,4 +1,4 @@
-# NEC D78C14G SBC
+# NEC µPD78C14G SBC
  
 ## Pictures
 
