@@ -12,7 +12,7 @@ d78c14 sbc bot
 
 NEC_D78C14G  
 
-![NEC_D78C14G.jpg](/NEC_D78C14G.jpg.jpg)
+![NEC_D78C14G.jpg](/NEC_D78C14G.jpg)
 
 
 
