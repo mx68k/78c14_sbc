@@ -1,0 +1,353 @@
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 1 - 4/1/2022 3:11:26
+
+
+       1/       0 :                     	cpu	78c10
+       2/       0 :                     	org 0000H
+       3/       0 : 54 00 01            		JMP START
+       4/       4 :                     	org 0004H
+       5/       4 : 54 9D 02            		JMP NMI
+       6/       7 :                     	;org 0008H
+       7/       7 :                     	;	JMP INTT0	;INTT0/INTT1			
+       8/      10 :                     	org 0010H
+       9/      10 : 54 BB 02            		JMP INT
+      10/      13 :                     	;org 0018H
+      11/      13 :                     	;	JMP INTE0	;INTE0/INTE1
+      12/      13 :                     	;org 0020H
+      13/      13 :                     	;	JMP INTEIN	;INTEIN/INTAD	
+      14/      28 :                     	org 0028H		
+      15/      28 : 54 3E 01            		JMP RECV ; INTSR
+      16/      2B :                     	;org 0060H		
+      17/      2B :                     	;	JMP SOFTI ; SOFTI		
+      18/      2B :                     		;
+      19/      2B :                     		;NMI .................0004H
+      20/      2B :                     		;INTT0/INTT1 .........0008H
+      21/      2B :                     		;INT1/INT2 ...........0010H
+      22/      2B :                     		;INTE0/INTE1 .........0018H
+      23/      2B :                     		;INTEIN/INTAD ........0020H
+      24/      2B :                     		;INTSR/INTST .........0028H
+      25/      2B :                     		;SOFTI ...............0060H
+      26/      2B :                     		;	
+      27/      80 :                     	org 0080H
+      28/      80 :                     	STRING:
+      29/      80 : 0A                  		DB 0AH
+      30/      81 : 0D                  		DB 0DH
+      31/      82 : 30                  		DB 30H
+      32/      83 : 31                  		DB 31H
+      33/      84 : 32                  		DB 32H
+      34/      85 : 33                  		DB 33H
+      35/      86 : 34                  		DB 34H
+      36/      87 : 35                  		DB 35H
+      37/      88 : 36                  		DB 36H
+      38/      89 : 37                  		DB 37H
+      39/      8A : 38                  		DB 38H
+      40/      8B : 39                  		DB 39H
+      41/      8C : 41                  		DB 41H
+      42/      8D : 42                  		DB 42H
+      43/      8E : 43                  		DB 43H
+      44/      8F : 44                  		DB 44H
+      45/      90 : 45                  		DB 45H
+      46/      91 : 46                  		DB 46H
+      47/      92 : 0A                  		DB 0AH
+      48/      93 : 0D                  		DB 0DH
+      49/      94 : 00                  		DB 00H
+      50/      95 :                     		;
+      51/     100 :                     	org 0100H	
+      52/     100 :                     	START: 
+      53/     100 : 69 0C                       MVI A, 0CH ; 4K EXT ROM+RAM (0000-0FFF) and 256B INT RAM () 
+      54/     102 : 4D D0                       MOV MM,A
+      55/     104 : 04 00 00                    LXI SP, 0000H
+      56/     107 :                     	;*****INT CONFIG
+      57/     107 : 69 F7               		MVI A, 0F7H ; 
+      58/     109 : 4D C7               		MOV MKL, A ; INT1 enable
+      59/     10B :                     	;*****SERIAL INTERFACE INITIALIZATION*******
+      60/     10B : 64 81 00            		MVI SMH, 00H ; Internal serial clock (TO)
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 2 - 4/1/2022 3:11:26
+
+
+      61/     10E : 69 FE               		MVI A, 0FEH ; ´ 16, even parity, 8 bit character, 2 stop bit <a>
+      62/     110 : 4D CA               		MOV SML, A ; Set serial mode
+      63/     112 : 69 03               		MVI A, 03H ; 03H for 9600 bps or 83H for 110 bps
+      64/     114 : 4D DA               		MOV TM0, A ; Set timer register
+      65/     116 : 69 01               		MVI A, 01H ; Baud rate 9600 bps <b> 01H or Baud rate 110 bps <b> 02H
+      66/     118 : 4D DB               		MOV TM1, A ;
+      67/     11A : 64 85 61            		MVI TMM, 61H ; Set timer mode & start
+      68/     11D : 69 07               		MVI A, 07H ; Set port C mode control
+      69/     11F : 4D D1               		MOV MCC, A ; TxD, RxD, /SCK available
+      70/     121 : 64 1A 80            		ORI PC, 80H ; PC7 output latch-1 <c>
+      71/     124 : 69 00               		MVI A, 00H ; Initialize port C
+      72/     126 : 4D D4               		MOV MC, A ; Port C output mode
+      73/     128 : 64 99 04            		ORI SMH, 04H ; Transmit enable
+      74/     12B :                     
+      75/     12B : 40 D9 02            		CALL PWRON
+      76/     12E :                     		
+      77/     12E :                     	;*****RECEIVE ENABLE**********
+      78/     12E :                     	RVEN:
+      79/     12E : 34 00 FF            		LXI H, 0FF00H ; Set data pointer (DP=FF00H) <a>
+      80/     131 : 6B 0F               		MVI C, 0FH ; Set data counter (DC=0FH) <b>
+      81/     133 : 11                  		EXX
+      82/     134 : 64 0E 05            		ANI MKH, 05H ; INTSR enable <c>
+      83/     137 : 64 99 08            		ORI SMH, 08H ; Receive enable <d>
+      84/     13A : 64 0A 7F            		ANI PC, 7FH ; /CTS=0 <e>		
+      85/     13D : AA                  		EI ; Enable interrupt
+      86/     13E :                     
+      87/     13E :                     	;*****RECEIVE SERVICE*************
+      88/     13E :                     	RECV:
+      89/     13E : 10                  		EXA ; Save accumulator
+      90/     13F : 11                  		EXX ; Save register
+      91/     140 : 48 6B               		SKNIT ER ; Test ERflag, skip if ER=0
+      92/     142 : 54 8D 01            		JMP ERROR ; Jump ERROR routine
+      93/     145 : 4C D9               		MOV A, RXB ; Input received data
+      94/     147 : 3D                  		STAX H+ ; Store received data to memory
+      95/     148 : 53                  		DCR C ; Skip if buffer full <c>		
+      96/     149 : CC                  		JR REC0 ;			
+      97/     14A : 64 1A 80            		ORI PC, 80H ; /CTS=1 <d>
+      98/     14D : 64 89 F7            		ANI SMH, 0F7H ; Receive disable <e>
+      99/     150 : 64 1E 02            		ORI MKH, 02H ; INTSR disable <f>
+     100/     153 : 40 96 01            		CALL BFULL		
+     101/     156 :                     	REC0:
+     102/     156 : 11                  		EXX ; Recover register
+     103/     157 : 10                  		EXA ; Recover accumulator
+     104/     158 :                     		;CALL RT
+     105/     158 : 40 79 01            		CALL PRINTM
+     106/     15B :                     
+     107/     15B : AA                  		EI ; Enable interrupt	
+     108/     15C : 62                  		RETI ; Return from Interrupt		
+     109/     15D :                     		;DW    7783H
+     110/     15D :                     		;JMP START
+     111/     15D :                     		
+     112/     15D :                     		;LXI H, 080H ; Set data pointer (DP=FF00H) <a>
+     113/     15D :                     		;MVI C, 0FH ; Set data counter (DC=0FH) <b>
+     114/     15D :                     			
+     115/     15D :                     	RT: 
+     116/     15D :                     ;*****TRANSMIT RECEIVE CHAR*************	
+     117/     15D : 2D                  		LDAX H+
+     118/     15E : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     119/     160 : FC                  		JR RT ; Wait until FST=1
+     120/     161 : 4D D8               		MOV TXB, A ; Output transmit
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 3 - 4/1/2022 3:11:26
+
+
+     121/     163 : 40 6A 01            		CALL LFCR
+     122/     166 : 54 5D 01            		JMP RT
+     123/     169 : B8                  		RET
+     124/     16A :                     
+     125/     16A :                     	LFCR:
+     126/     16A :                     		;*****TRANSMIT LF and CR*************	
+     127/     16A :                     	LF:
+     128/     16A : 69 0A               		MVI A, 0AH ; "\n" in A
+     129/     16C : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     130/     16E : FB                  		JR LF ; Wait until FST=1
+     131/     16F : 4D D8               		MOV TXB, A ; Output transmit
+     132/     171 :                     	CR:
+     133/     171 : 69 0D               		MVI A, 0DH ; "\r" in A
+     134/     173 : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     135/     175 : FB                  		JR CR ; Wait until FST=1
+     136/     176 : 4D D8               		MOV TXB, A ; Output transmit	
+     137/     178 : B8                  		RET		
+     138/     179 :                     		
+     139/     179 :                     	PRINTM:	
+     140/     179 : 34 9D 01            		LXI H, RUSHANA
+     141/     17C : 40 8D 02            		CALL PRINT
+     142/     17F : 34 AA 01            		LXI H, MISHA	
+     143/     182 : 40 8D 02            		CALL PRINT
+     144/     185 : 34 80 00            		LXI H, STRING
+     145/     188 : 40 8D 02            		CALL PRINT
+     146/     18B :                     		;JR PRINTM
+     147/     18B : B8                  		RET
+     148/     18C :                     	LOOP:
+     149/     18C : FF                  		JR LOOP
+     150/     18D :                     		
+     151/     18D :                     	ERROR:
+     152/     18D : 34 B5 01            		LXI H, PERROR
+     153/     190 : 40 8D 02            		CALL PRINT
+     154/     193 : 54 00 01            		JMP START	
+     155/     196 :                     	
+     156/     196 :                     	BFULL:
+     157/     196 : 34 C0 01            		LXI H, PBFULL
+     158/     199 : 40 8D 02            		CALL PRINT
+     159/     19C : B8                  		RET	
+     160/     19D :                     		
+     161/     19D :                     	RUSHANA:
+     162/     19D : 0A 0D 52 75 73 68   		DB 0AH, 0DH, "Rushana ",0AH, 0DH, 0
+              1A3 : 61 6E 61 20 0A 0D 
+              1A9 : 00                
+     163/     1AA :                     
+     164/     1AA :                     	MISHA:
+     165/     1AA : 0A 0D 4D 69 73 68   		DB 0AH, 0DH, "Misha ",0AH, 0DH, 0
+              1B0 : 61 20 0A 0D 00    
+     166/     1B5 :                     		
+     167/     1B5 :                     	PERROR:	
+     168/     1B5 : 0A 0D 45 52 52 4F   		DB 0AH, 0DH, "ERROR ",0AH, 0DH, 0
+              1BB : 52 20 0A 0D 00    
+     169/     1C0 :                     			
+     170/     1C0 :                     	PBFULL:
+     171/     1C0 : 0A 0D 21 21 21 21   		DB 0AH, 0DH, "!!!!!!!!!!!!!!!!!!!! Buffer Full !!!!!!!!!!!!!!!!!!!! ",0AH, 0DH, 0
+              1C6 : 21 21 21 21 21 21 
+              1CC : 21 21 21 21 21 21 
+              1D2 : 21 21 21 21 20 42 
+              1D8 : 75 66 66 65 72 20 
+              1DE : 46 75 6C 6C 20 21 
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 4 - 4/1/2022 3:11:26
+
+
+              1E4 : 21 21 21 21 21 21 
+              1EA : 21 21 21 21 21 21 
+              1F0 : 21 21 21 21 21 21 
+              1F6 : 21 20 0A 0D 00    
+     172/     1FB :                     	
+     173/     1FB :                     	PPWRON:
+     174/     1FB : 0A 0D 0A 0D 0A 0D   		DB 0AH, 0DH, 0AH, 0DH, 0AH, 0DH, 0AH, 0DH, "                              Power ON ",0AH, 0DH
+              201 : 0A 0D 20 20 20 20 
+              207 : 20 20 20 20 20 20 
+              20D : 20 20 20 20 20 20 
+              213 : 20 20 20 20 20 20 
+              219 : 20 20 20 20 20 20 
+              21F : 20 20 50 6F 77 65 
+              225 : 72 20 4F 4E 20 0A 
+              22B : 0D                
+     175/     22C : 0A 0D 20 20 20 20   		DB 0AH, 0DH, "                              uPD78C14G Test ",0AH, 0DH
+              232 : 20 20 20 20 20 20 
+              238 : 20 20 20 20 20 20 
+              23E : 20 20 20 20 20 20 
+              244 : 20 20 20 20 20 20 
+              24A : 20 20 75 50 44 37 
+              250 : 38 43 31 34 47 20 
+              256 : 54 65 73 74 20 0A 
+              25C : 0D                
+     176/     25D : 0A 0D 20 20 20 20   		DB 0AH, 0DH, "                              14.12.2021 ",0AH, 0DH,0AH, 0DH, 0
+              263 : 20 20 20 20 20 20 
+              269 : 20 20 20 20 20 20 
+              26F : 20 20 20 20 20 20 
+              275 : 20 20 20 20 20 20 
+              27B : 20 20 31 34 2E 31 
+              281 : 32 2E 32 30 32 31 
+              287 : 20 0A 0D 0A 0D 00 
+     177/     28D :                     		
+     178/     28D :                     	PRINT:
+     179/     28D : 2D                  		LDAX H+
+     180/     28E : 67 00               		NEI A, 000H
+     181/     290 : B8                  		RET
+     182/     291 : 77 00               		EQI A, 000H
+     183/     293 : 40 97 02            		CALL COUT
+     184/     296 : F6                  		JR PRINT
+     185/     297 :                     
+     186/     297 :                     	COUT:
+     187/     297 : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     188/     299 : FD                  		JR COUT ; Wait until FST=1
+     189/     29A : 4D D8               		MOV TXB, A ; Output transmit
+     190/     29C : B8                  		RET
+     191/     29D :                     		
+     192/     29D :                     	NMI:
+     193/     29D : 10                  		EXA ; Save accumulator
+     194/     29E : 11                  		EXX ; Save register
+     195/     29F : 69 4E               		MVI A, 4EH ; "N" in A
+     196/     2A1 : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     197/     2A3 : F9                  		JR NMI ; Wait until FST=1
+     198/     2A4 : 4D D8               		MOV TXB, A ; Output transmit
+     199/     2A6 :                     	M:	
+     200/     2A6 : 69 4D               		MVI A, 4DH ; "M" in A
+     201/     2A8 : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     202/     2AA : FB                  		JR M ; Wait until FST=1
+     203/     2AB : 4D D8               		MOV TXB, A ; Output transmit
+     204/     2AD :                     	I:	
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 5 - 4/1/2022 3:11:26
+
+
+     205/     2AD : 69 49               		MVI A, 49H ; "I" in A
+     206/     2AF : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     207/     2B1 : FB                  		JR I ; Wait until FST=1
+     208/     2B2 : 4D D8               		MOV TXB, A ; Output transmit
+     209/     2B4 : 40 6A 01            		CALL LFCR
+     210/     2B7 : 11                  		EXX ; Recover register
+     211/     2B8 : 10                  		EXA ; Recover accumulator
+     212/     2B9 : AA                  		EI
+     213/     2BA : 62                  		RETI ; Return from Interrupt		
+     214/     2BB :                     		
+     215/     2BB :                     	INT:
+     216/     2BB : 10                  		EXA ; Save accumulator
+     217/     2BC : 11                  		EXX ; Save register
+     218/     2BD : 69 49               		MVI A, 49H ; "I" in A
+     219/     2BF : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     220/     2C1 : F9                  		JR INT ; Wait until FST=1
+     221/     2C2 : 4D D8               		MOV TXB, A ; Output transmit
+     222/     2C4 :                     	N:
+     223/     2C4 : 69 4E               		MVI A, 4EH ; "N" in A
+     224/     2C6 : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     225/     2C8 : FB                  		JR N ; Wait until FST=1
+     226/     2C9 : 4D D8               		MOV TXB, A ; Output transmit
+     227/     2CB :                     	T:	
+     228/     2CB : 69 54               		MVI A, 54H ; "T" in A
+     229/     2CD : 48 4A               		SKIT FST ; Test FST, skip if FST=1
+     230/     2CF : FB                  		JR T ; Wait until FST=1
+     231/     2D0 : 4D D8               		MOV TXB, A ; Output transmit
+     232/     2D2 : 40 6A 01            		CALL LFCR	
+     233/     2D5 : 11                  		EXX ; Recover register
+     234/     2D6 : 10                  		EXA ; Recover accumulator		
+     235/     2D7 : AA                  		EI
+     236/     2D8 : 62                  		RETI ; Return from Interrupt
+     237/     2D9 :                     		
+     238/     2D9 :                     	PWRON:
+     239/     2D9 : 34 FB 01            		LXI H, PPWRON
+     240/     2DC : 40 8D 02            		CALL PRINT
+     241/     2DF : B8                  		RET	
+     242/     2E0 :                     
+     243/     2E0 :                     				
+     244/     2E0 :                     		
+     245/     2E0 :                     
+     246/     2E0 :                     
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 6 - 4/1/2022 3:11:26
+
+
+  Symbol Table (* = unused):
+  --------------------------
+
+*ARCHITECTURE :                                        "i386-unknown-win32" - |
+ BFULL :                        196 C | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  0 - |
+*COMPMODE :                       0 - | *CONSTPI :        3.141592653589793 - |
+ COUT :                         297 C |  CR :                           171 C |
+*CUSTOM :                         0 - | *DATE :                  "4/1/2022" - |
+ ERROR :                        18D C | *FALSE :                          0 - |
+*FULLPMMU :                       1 - | *HAS64 :                          0 - |
+*HASDSP :                         0 - | *HASFPU :                         0 - |
+*HASPMMU :                        0 - |  I :                            2AD C |
+*INEXTMODE :                      0 - | *INLWORDMODE :                    0 - |
+*INMAXMODE :                      0 - | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  INT :                          2BB C |
+ LF :                           16A C |  LFCR :                         16A C |
+*LISTON :                         1 - |  LOOP :                         18C C |
+ M :                            2A6 C | *MACEXP :                         7 - |
+ MISHA :                        1AA C | *MOMCPU :                     78C10 - |
+*MOMCPUNAME :               "78C10" - |  N :                            2C4 C |
+*NESTMAX :                      100 - |  NMI :                          29D C |
+*PACKING :                        0 - | *PADDING :                        1 - |
+ PBFULL :                       1C0 C |  PERROR :                       1B5 C |
+ PPWRON :                       1FB C |  PRINT :                        28D C |
+ PRINTM :                       179 C |  PWRON :                        2D9 C |
+ REC0 :                         156 C |  RECV :                         13E C |
+*RELAXED :                        0 - |  RT :                           15D C |
+ RUSHANA :                      19D C | *RVEN :                         12E C |
+ START :                        100 C |  STRING :                        80 C |
+ T :                            2CB C | *TIME :                   "3:11:26" - |
+*TRUE :                           1 - | *VERSION :                     142F - |
+*Z80SYNTAX :                      0 - |
+
+     58 symbols
+     32 unused symbols
+
+ AS V1.42 Beta [Bld 213] - Source File uPD78C14G_Test.asm - Page 7 - 4/1/2022 3:11:26
+
+
+  Code Pages:
+  ----------
+
+STANDARD (0 changed characters)
+
+1 code page
+
+0.01 seconds assembly time
+
+    246 lines source file
+      2 passes
+      0 errors
+      0 warnings
