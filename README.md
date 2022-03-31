@@ -1,1 +1,1 @@
-# 78c14 SBC
+# NEC D78C14G SBC
